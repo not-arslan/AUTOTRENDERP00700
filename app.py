@@ -1,15 +1,24 @@
-
 import streamlit as st
-from modules.login import login_ui
-from modules.auth import is_logged_in, logout_button
+import pandas as pd
 
-st.set_page_config(page_title="FS Traders Official", layout="wide")
+def login_ui():
+    st.title("🔐 FS Traders Login")
 
-if not is_logged_in():
-    login_ui()
-else:
-    st.sidebar.success(f"Logged in as: {st.session_state['email']}")
-    logout_button()
+    email = st.text_input("Email")
+    password = st.text_input("Password", type="password")
 
-    st.title("📊 FS Traders Official Dashboard")
-    st.write("Welcome to your secure dashboard!")
+    if st.button("Login"):
+        df = pd.read_csv("data/users.csv")
+        user = df[(df['email'] == email) & (df['password'] == password)]
+
+        if not user.empty:
+            if user.iloc[0]['approved'] == 'yes':
+                st.session_state['logged_in'] = True
+                st.session_state['email'] = email
+                st.session_state['role'] = user.iloc[0]['role']
+                st.success("Login successful! Redirecting...")
+                st.stop()  # Avoid recursive rerun
+            else:
+                st.error("Access pending admin approval.")
+        else:
+            st.error("Invalid email or password.")

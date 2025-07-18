@@ -1,6 +1,0 @@
-streamlit
-pandas
-pandas-ta
-textblob
-openai
-requests

@@ -1,35 +1,37 @@
+# modules/dashboard.py
+
 import streamlit as st
 from datetime import datetime, time
-from modules.angel_api import get_jwt_token, get_option_chain, get_crude_data
-from modules.ai_calls import generate_ai_call
-from modules.news_feed import show_news_section  # ✅ fixed here
-from modules.chatbot import show_chatbot
-from modules.login import logout_button
+from modules.fyers_api import get_option_chain_fyers, get_crude_data_fyers
+from modules.ai_calls    import generate_ai_call
+from modules.news_feed   import show_news_section
+from modules.chatbot     import show_chatbot
+from modules.login       import logout_button
 import pandas as pd
 
 def is_market_open():
     now = datetime.now().time()
     return time(9, 30) <= now <= time(15, 30)
 
-def show_oi_pcr_section(data):
-    ce_oi, pe_oi, rows = 0, 0, []
-
-    for row in data:
-        if "CE" in row and "PE" in row:
-            ce = row["CE"]
-            pe = row["PE"]
-            ce_oi += ce["openInterest"]
-            pe_oi += pe["openInterest"]
-            rows.append({
+def show_oi_pcr_section(chain_rows):
+    ce_total, pe_total, table = 0, 0, []
+    for r in chain_rows:
+        if "CE" in r and "PE" in r:
+            ce = r["CE"]; pe = r["PE"]
+            ce_oi = ce["openInterest"]
+            pe_oi = pe["openInterest"]
+            ce_total += ce_oi
+            pe_total += pe_oi
+            table.append({
                 "Strike": ce["strikePrice"],
-                "CE OI": ce["openInterest"],
-                "PE OI": pe["openInterest"],
-                "PCR": round(pe["openInterest"] / ce["openInterest"], 2) if ce["openInterest"] > 0 else 0
+                "CE OI" : ce_oi,
+                "PE OI" : pe_oi,
+                "PCR"   : round(pe_oi/ce_oi, 2) if ce_oi else None
             })
 
-    df = pd.DataFrame(rows)
-    total_pcr = round(pe_oi / ce_oi, 2) if ce_oi else 0
-    st.subheader("📈 Option Chain Data – NIFTY")
+    df = pd.DataFrame(table)
+    total_pcr = round(pe_total/ce_total, 2) if ce_total else None
+    st.subheader("📈 Option Chain – NIFTY")
     st.dataframe(df, use_container_width=True)
     st.success(f"🧮 Live PCR: {total_pcr}")
 
@@ -37,44 +39,34 @@ def show_dashboard():
     st.sidebar.title("📊 FS Traders")
     logout_button()
 
-    section = st.sidebar.radio("Go to:", ["📈 OI + PCR", "🛢 CrudeOil", "🤖 AI Calls", "📰 News", "💬 Chatbot"])
+    menu = ["📈 OI + PCR", "🛢 CrudeOil", "🤖 AI Calls", "📰 News", "💬 Chatbot"]
+    section = st.sidebar.radio("Go to:", menu)
 
+    # Fetch once
     try:
-        token = get_jwt_token()
-    except Exception as e:
-        st.error(f"❌ Token Error: {e}")
-        return
-
-    if section == "📈 OI + PCR":
-        if is_market_open():
-            data = get_option_chain(token)
-            if data and "data" in data:
-                show_oi_pcr_section(data["data"])
+        if section == "📈 OI + PCR":
+            if is_market_open():
+                rows = get_option_chain_fyers()
+                if rows:
+                    show_oi_pcr_section(rows)
+                else:
+                    st.warning("⚠️ No option chain data found.")
             else:
-                st.warning("⚠️ No option chain data found.")
-        else:
-            st.warning("📴 Market is closed. Live updates 9:30 AM – 3:30 PM")
-
-    elif section == "🛢 CrudeOil":
-        st.subheader("🛢 MCX CrudeOil – Live Data")
-        crude = get_crude_data(token)
-        if crude:
-            st.dataframe(pd.DataFrame(crude), use_container_width=True)
-        else:
-            st.error("❌ Could not fetch CrudeOil data.")
-
-    elif section == "🤖 AI Calls":
-        st.subheader("🤖 AI-Generated Trade Call")
-        ai_call = generate_ai_call()
-        if ai_call:
-            st.success(f"📢 {ai_call}")
-        else:
-            st.warning("⚠️ Could not generate call at the moment.")
-
-    elif section == "📰 News":
-        show_news_section()  # ✅ fixed here
-
-    elif section == "💬 Chatbot":
-        show_chatbot()
-
-
+                st.warning("Market closed. Live 9:30–15:30 IST")
+        elif section == "🛢 CrudeOil":
+            st.subheader("🛢 MCX CrudeOil – Live")
+            data = get_crude_data_fyers()
+            if data:
+                st.dataframe(pd.DataFrame(data), use_container_width=True)
+            else:
+                st.error("❌ Could not fetch CrudeOil data.")
+        elif section == "🤖 AI Calls":
+            st.subheader("🤖 AI Trade Call")
+            call = generate_ai_call()
+            st.success(call) if call else st.warning("⚠️ No call right now.")
+        elif section == "📰 News":
+            show_news_section()
+        elif section == "💬 Chatbot":
+            show_chatbot()
+    except Exception as e:
+        st.error(f"❌ Error fetching data: {e}")

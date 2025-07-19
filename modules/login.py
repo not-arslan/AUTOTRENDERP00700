@@ -1,19 +1,13 @@
+# modules/login.py
+
 import streamlit as st
 
-# Dummy user database
-users = {
-    "admin@gmail.com": "admin123"
-}
-
 def login_user():
-    st.title("🔐 FS Traders Login")
-    email = st.text_input("Email")
+    st.title("Login Page")
+    username = st.text_input("Username")
     password = st.text_input("Password", type="password")
-    login = st.button("Login")
-
-    if login:
-        if email in users and users[email] == password:
-            st.session_state.authenticated = True
-            st.success("Login successful!")
+    if st.button("Login"):
+        if username == "admin" and password == "admin123":
+            st.success("Login Successful ✅")
         else:
-            st.error("Invalid email or password.")
+            st.error("Invalid credentials ❌")

@@ -14,6 +14,7 @@ def login_user():
         if username in users and users[username] == password:
             st.success("Login Successful ✅")
             st.session_state.authenticated = True
-            st.experimental_rerun()  # 🔥 This is what triggers redirect to dashboard!
+          st.rerun()
+
         else:
             st.error("Invalid credentials ❌")

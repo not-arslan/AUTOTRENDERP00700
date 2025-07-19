@@ -1,21 +1,26 @@
-# FS Trader - Full Setup (Live)
+# 📊 FS Traders Official – Live Stock Market Dashboard
 
-## Setup
-1. Create `.streamlit/secrets.toml` with:
-```toml
-api_key = "YOUR_ANGEL_API_KEY"
-client_id = "YOUR_CLIENT_ID"
-client_password = "YOUR_PASSWORD"
-totp_secret = "YOUR_TOTP_SECRET"
-openai_api_key = "YOUR_OPENAI_KEY"
-telegram_bot_token = "YOUR_TELEGRAM_TOKEN"
-telegram_chat_id = "YOUR_TELEGRAM_CHAT_ID"
-email_user = "your_email@gmail.com"
-email_pass = "your_email_app_password"
-```
+This is a secure login-based Streamlit dashboard designed for retail traders.
 
-2. Install & run:
-```bash
-pip install -r requirements.txt
-streamlit run app.py
-```
+## ✅ Features (Coming Soon)
+
+- Live Option Chain (NSE + MCX via Angel One)
+- Put/Call Ratio (PCR) analysis
+- AI-generated Buy/Sell Calls
+- News Feed with Sentiment
+- Sector Heatmap
+- Multi-language Chatbot (MISS.TRADER)
+
+## 🔐 Login
+
+Default credentials:
+
+- **Username:** `admin`
+- **Password:** `admin123`
+
+## 🛠 Tech Stack
+
+- Python
+- Streamlit
+- Angel One SmartAPI (Integration Coming Soon)
+- OpenAI (AI Integration Coming Soon)

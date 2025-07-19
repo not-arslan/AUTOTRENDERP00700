@@ -12,7 +12,7 @@ def login_user():
         if username == "admin" and password == "admin123":
             st.session_state.logged_in = True
             st.success("Login Successful ✅")
-            st.rerun()  # 🔁 Redirect to dashboard
+            st.rerun()  # 🔁 Yehi line galat indent ho rahi thi
         else:
             st.error("Invalid credentials ❌")
 

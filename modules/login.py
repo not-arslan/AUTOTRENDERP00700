@@ -15,6 +15,5 @@ def login_user():
             st.success("Login Successful ✅")
             st.session_state.authenticated = True
           st.rerun()
-
         else:
             st.error("Invalid credentials ❌")

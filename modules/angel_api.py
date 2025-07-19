@@ -1,9 +1,8 @@
-
 # modules/angel_api.py
+
 import streamlit as st
 import requests
 import pyotp
-import datetime
 
 @st.cache_data(ttl=600)
 def get_jwt_token():
@@ -15,6 +14,7 @@ def get_jwt_token():
 
     login_url = "https://apiconnect.angelbroking.com/rest/auth/angelbroking/user/v1/loginByPassword"
     headers = {"Content-Type": "application/json", "Accept": "application/json"}
+
     payload = {
         "clientcode": client_id,
         "password": password,
@@ -31,10 +31,14 @@ def get_jwt_token():
 
 def get_option_chain(symbol="NIFTY"):
     jwt_token = get_jwt_token()
+    if not jwt_token:
+        return {"error": "No JWT token"}
+
     headers = {
         "Authorization": f"Bearer {jwt_token}",
         "X-PrivateKey": st.secrets["api_key"]
     }
+
     url = f"https://apiconnect.angelbroking.com/rest/secure/option/getOptionData?symbol={symbol}"
 
     try:
@@ -43,4 +47,3 @@ def get_option_chain(symbol="NIFTY"):
     except Exception as e:
         st.error(f"Option chain fetch error: {e}")
         return {}
-

@@ -3,10 +3,11 @@ from modules.login import login_user
 from modules.dashboard import show_dashboard
 
 def main():
-    if "logged_in" not in st.session_state:
-        st.session_state.logged_in = False
+    st.set_page_config(page_title="FS Traders Official – Live Dashboard", layout="wide")
+    if "authenticated" not in st.session_state:
+        st.session_state.authenticated = False
 
-    if st.session_state.logged_in:
+    if st.session_state.authenticated:
         show_dashboard()
     else:
         login_user()

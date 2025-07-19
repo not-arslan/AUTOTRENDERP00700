@@ -1,21 +1,18 @@
-# modules/login.py
-
-import streamlit as st
-
 def login_user():
-    st.title("🔐 FS Traders Login")
+    if st.session_state.get("logged_in"):
+        return True
+
+    st.subheader("🔐 Login to FS Traders Dashboard")
+
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
 
     if st.button("Login"):
         if username == "anis" and password == "anisahmad":
+            st.session_state["logged_in"] = True
             st.success("✅ Login Successful")
-            st.session_state.logged_in = True
-            st.experimental_rerun()
+            st.rerun()  # 👈 OLD: st.experimental_rerun()
         else:
-            st.error("❌ Invalid username or password")
+            st.error("❌ Invalid credentials")
 
-def logout_button():
-    if st.sidebar.button("🔓 Logout"):
-        st.session_state.logged_in = False
-        st.experimental_rerun()
+    return False

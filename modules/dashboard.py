@@ -1,10 +1,8 @@
-# modules/dashboard.py
-
 import streamlit as st
 from datetime import datetime, time
 from modules.angel_api import get_jwt_token, get_option_chain, get_crude_data
 from modules.ai_calls import generate_ai_call
-from modules.news_feed import show_news_feed
+from modules.news_feed import show_news_section  # ✅ fixed here
 from modules.chatbot import show_chatbot
 from modules.login import logout_button
 import pandas as pd
@@ -74,7 +72,7 @@ def show_dashboard():
             st.warning("⚠️ Could not generate call at the moment.")
 
     elif section == "📰 News":
-        show_news_feed()
+        show_news_section()  # ✅ fixed here
 
     elif section == "💬 Chatbot":
         show_chatbot()

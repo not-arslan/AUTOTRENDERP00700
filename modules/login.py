@@ -5,11 +5,11 @@ import streamlit as st
 def login_user():
     st.title("🔐 Login Page")
 
-    username = st.text_input("anis")
-    password = st.text_input("Password", type="anis4545")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
 
     if st.button("Login"):
-        if username == "admin" and password == "admin123":
+        if username == "anis" and password == "anisahmad":
             st.session_state.authenticated = True
             st.success("✅ Login Successful!")
             st.rerun()

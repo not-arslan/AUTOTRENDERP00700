@@ -7,4 +7,5 @@ beautifulsoup4
 html5lib
 streamlit>=1.28.0
 pyotp
+fyers-apiv3
 

@@ -5,8 +5,8 @@ import streamlit as st
 def login_user():
     st.title("🔐 Login Page")
 
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
+    username = st.text_input("anis")
+    password = st.text_input("Password", type="anis4545")
 
     if st.button("Login"):
         if username == "admin" and password == "admin123":

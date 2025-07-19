@@ -1,22 +1,19 @@
-# login.py
-
 import streamlit as st
 
-# Dummy user data – YOU CAN ADD MORE USERS HERE
-users = {
-    "admin": "admin123",
-    "anis": "anis123",
-}
-
 def login_user():
-    st.title("🔐 Login Page")
-
+    st.title("Login Page")
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
 
+    users = {
+        "admin": "admin123",
+        "anis": "anis123"
+    }
+
     if st.button("Login"):
         if username in users and users[username] == password:
-            st.session_state.logged_in = True
-            st.success("✅ Login Successful")
+            st.success("Login Successful ✅")
+            st.session_state.authenticated = True
+            st.experimental_rerun()  # 🔥 This is what triggers redirect to dashboard!
         else:
-            st.error("❌ Invalid credentials")
+            st.error("Invalid credentials ❌")

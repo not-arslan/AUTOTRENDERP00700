@@ -1,7 +1,7 @@
-# chatbot.py
+# modules/chatbot.py
 
-# Placeholder for MISS.TRADER – AI Chatbot module
+# Placeholder for MISS.TRADER – AI chatbot feature
 
 def chat_with_bot(query: str):
-    # This will later connect to OpenAI or Gemini for natural language answers
+    # Future integration: OpenAI or Gemini response
     return f"You asked: {query} — Chatbot feature coming soon!"

@@ -1,23 +1,19 @@
 import streamlit as st
 
-# --- Login UI Function ---
-def login_ui():
-    st.title("🔒 FS Trader Login")
+# Dummy user database
+users = {
+    "admin@gmail.com": "admin123"
+}
 
-    username = st.text_input("Username")
+def login_user():
+    st.title("🔐 FS Traders Login")
+    email = st.text_input("Email")
     password = st.text_input("Password", type="password")
+    login = st.button("Login")
 
-    if st.button("Login"):
-        if username == "admin" and password == "admin123":
-            st.session_state.auth = True
-            st.success("✅ Login successful! Welcome Admin.")
-            st.experimental_rerun()
+    if login:
+        if email in users and users[email] == password:
+            st.session_state.authenticated = True
+            st.success("Login successful!")
         else:
-            st.error("❌ Invalid username or password")
-
-# --- Logout UI Function ---
-def logout_ui():
-    if st.button("🚪 Logout"):
-        st.session_state.auth = False
-        st.success("Logged out successfully.")
-        st.experimental_rerun()
+            st.error("Invalid email or password.")

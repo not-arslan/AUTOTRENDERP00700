@@ -1,22 +1,7 @@
-import streamlit as st
-import openai
+# chatbot.py
 
-def miss_trader_chat():
-    st.subheader("🤖 Miss.Trader - AI Chat Assistant")
+# Placeholder for MISS.TRADER – AI Chatbot module
 
-    openai.api_key = st.secrets["openai_api_key"]
-
-    # User input
-    user_msg = st.text_input("💬 Ask Miss.Trader (English / Hindi / Hinglish)")
-    
-    if st.button("Send") and user_msg:
-        try:
-            with st.spinner("Miss.Trader is thinking..."):
-                response = openai.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                    messages=[{"role": "user", "content": user_msg}]
-                )
-                reply = response.choices[0].message.content
-                st.success(reply)
-        except Exception as e:
-            st.error(f"Chatbot error: {e}")
+def chat_with_bot(query: str):
+    # This will later connect to OpenAI or Gemini for natural language answers
+    return f"You asked: {query} — Chatbot feature coming soon!"

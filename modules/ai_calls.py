@@ -1,8 +1,7 @@
-# ai_calls.py
+# modules/ai_calls.py
 
-# Placeholder module for future AI-based buy/sell call generation
-# This will later include OpenAI or Gemini API integration
+# Future AI Call Generator (placeholder for now)
 
 def get_ai_calls():
-    # Future logic will analyze market data and return calls
+    # This will be replaced by logic using OI/PCR or OpenAI API
     return []

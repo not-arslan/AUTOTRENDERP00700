@@ -1,5 +1,3 @@
-# modules/fyers_oi_table.py
-
 import streamlit as st
 import pandas as pd
 import requests
@@ -9,9 +7,6 @@ from datetime import datetime
 # ———————————————————————————————————————————————
 @st.cache_data(ttl=180)
 def get_fyers_option_chain(symbol="NSE:NIFTY50-INDEX", expiry=None):
-    """
-    Fetch option chain from Fyers API. Needs fyers_access_token in st.secrets.
-    """
     if datetime.today().weekday() == 6:
         return None
     headers = {"Authorization": f"Bearer {st.secrets['fyers_access_token']}"}
@@ -19,7 +14,6 @@ def get_fyers_option_chain(symbol="NSE:NIFTY50-INDEX", expiry=None):
     if expiry:
         payload["expiry"] = expiry
     url = "https://api.fyers.in/data-rest/v3/options-chain"
-
     for _ in range(3):
         resp = requests.get(url, headers=headers, params=payload)
         if resp.status_code == 200:
@@ -33,7 +27,6 @@ def get_fyers_option_chain(symbol="NSE:NIFTY50-INDEX", expiry=None):
 def extract_expiries(data):
     chains = data.get("data", {}).get("chains", [])
     expiries = sorted({row.get("expiry") for row in chains})
-    # Format: ["2025-07-24", ...] -> ["24-Jul-2025", ...]
     return [datetime.strptime(e, "%Y-%m-%d").strftime("%d-%b-%Y") for e in expiries if e]
 
 def format_lakh(val):
@@ -49,14 +42,10 @@ def format_percent(val):
         return val
 
 def build_full_oi_table(chains, selected_expiry):
-    """
-    Build full Autotrendr-style OI table. Returns nicely formatted DataFrame.
-    """
     df = pd.DataFrame([c for c in chains if c["expiry"] == selected_expiry])
     if df.empty:
         return pd.DataFrame()
 
-    # Pivot for calls and puts by strike
     ce = df[df["type"]=="CE"].set_index("strike")
     pe = df[df["type"]=="PE"].set_index("strike")
     all_strikes = sorted(set(ce.index).union(pe.index))
@@ -71,11 +60,13 @@ def build_full_oi_table(chains, selected_expiry):
             "Chg OI (CE)": format_lakh(ce_row.get("changeInOI", 0)),
             "%Chg (CE)": format_percent(ce_row.get("pChangeInOI", 0)),
             "LTP (CE)": ce_row.get("lastTradedPrice", 0),
+            "VWAP (CE)": ce_row.get("vwap", 0),
             "OI (CE)": format_lakh(ce_row.get("openInterest", 0)),
             # Center
             "Strike": strike,
             # Right (PUTS)
             "OI (PE)": format_lakh(pe_row.get("openInterest", 0)),
+            "VWAP (PE)": pe_row.get("vwap", 0),
             "LTP (PE)": pe_row.get("lastTradedPrice", 0),
             "%Chg (PE)": format_percent(pe_row.get("pChangeInOI", 0)),
             "Chg OI (PE)": format_lakh(pe_row.get("changeInOI", 0)),
@@ -84,33 +75,24 @@ def build_full_oi_table(chains, selected_expiry):
 
     final = pd.DataFrame(rows)
     final = final[
-        ["Chg OI (CE)", "%Chg (CE)", "LTP (CE)", "OI (CE)",
+        ["Chg OI (CE)", "%Chg (CE)", "LTP (CE)", "VWAP (CE)", "OI (CE)",
          "Strike",
-         "OI (PE)", "LTP (PE)", "%Chg (PE)", "Chg OI (PE)"]
+         "OI (PE)", "VWAP (PE)", "LTP (PE)", "%Chg (PE)", "Chg OI (PE)"]
     ]
-
-    # Format numbers for display
-    for col in ["Strike", "LTP (CE)", "LTP (PE)"]:
+    for col in ["Strike", "LTP (CE)", "VWAP (CE)", "LTP (PE)", "VWAP (PE)"]:
         final[col] = pd.to_numeric(final[col], errors="coerce")
     return final.sort_values("Strike")
 
 # ———————————————————————————————————————————————
 def build_intraday_trend_df(session_key="oi_trend_log"):
-    """
-    Uses session_state to build/extend intraday OI trend DataFrame.
-    """
     if session_key not in st.session_state:
         st.session_state[session_key] = []
     log = st.session_state[session_key]
-    # Return as DataFrame
     if not log:
         return pd.DataFrame()
     return pd.DataFrame(log)
 
 def update_oi_trend_log(total_ce, total_pe, price=0, vwap=0):
-    """
-    Add current snapshot to intraday log.
-    """
     pcr = round(total_pe/total_ce, 2) if total_ce else 0
     signal = "BUY" if pcr > 1.1 else "SELL" if pcr < 0.85 else "NEUTRAL"
     log_entry = {
@@ -123,7 +105,6 @@ def update_oi_trend_log(total_ce, total_pe, price=0, vwap=0):
         "VWAP": vwap,
         "Price": price,
     }
-    # Only add if time is new (no spam)
     if "oi_trend_log" not in st.session_state:
         st.session_state["oi_trend_log"] = []
     log = st.session_state["oi_trend_log"]
@@ -131,24 +112,43 @@ def update_oi_trend_log(total_ce, total_pe, price=0, vwap=0):
         log.append(log_entry)
         st.session_state["oi_trend_log"] = log
 
-# ———————————————————————————————————————————————
-def style_oi_table(df):
-    # Coloring: green max OI, orange max Chg OI, bold strike at-the-money
+def filter_intraday_df_by_interval(df, interval):
     if df.empty:
         return df
+    df["_minute"] = pd.to_datetime(df["Time"], format="%H:%M").dt.minute
+    filtered = df[df["_minute"] % interval == 0].copy()
+    filtered.drop(columns=["_minute"], inplace=True)
+    return filtered
+
+def style_oi_table(df):
+    if df.empty:
+        return df
+
+    def ce_color(val):
+        try:
+            v = float(str(val).replace(",", ""))
+            # Blue gradient
+            return f"background-color: rgb({230 - min(int(v/20000),130)}, {230 - min(int(v/8000),110)}, 255); color: black"
+        except:
+            return ""
+    def pe_color(val):
+        try:
+            v = float(str(val).replace(",", ""))
+            # Red gradient
+            return f"background-color: rgb(255, {230 - min(int(v/8000),110)}, {230 - min(int(v/8000),110)}); color: black"
+        except:
+            return ""
+
     styled = df.style \
+        .applymap(ce_color, subset=["OI (CE)", "Chg OI (CE)"]) \
+        .applymap(pe_color, subset=["OI (PE)", "Chg OI (PE)"]) \
         .set_properties(**{"background-color": "#181c20", "color": "white"}) \
-        .highlight_max(subset=["OI (CE)"], color="green") \
-        .highlight_max(subset=["OI (PE)"], color="green") \
-        .highlight_max(subset=["Chg OI (CE)"], color="#fbc02d") \
-        .highlight_max(subset=["Chg OI (PE)"], color="#fbc02d") \
         .set_table_styles([
             {"selector": "th", "props": [("position", "sticky"), ("top", "0"), ("background-color", "#1a1d1e")]}
         ])
     return styled
 
 def style_intraday_table(df):
-    # Signal coloring
     if df.empty:
         return df
     def color_signal(val):
@@ -189,30 +189,27 @@ def show_fyers_oi_table():
         st.error("⚠️ Data missing for selected expiry.")
         return
 
+    # Intraday interval selector
+    interval = st.sidebar.selectbox("Intraday Interval", [3, 5, 15], index=1, format_func=lambda x: f"{x} min")
+
     # ——— Main OI Table ———
     chains = data_exp.get("data", {}).get("chains", [])
     df = build_full_oi_table(chains, selected_expiry)
     st.markdown("### Nifty Option Chain")
     if not df.empty:
         st.dataframe(style_oi_table(df), use_container_width=True, height=560)
-        # Download button
         csv = df.to_csv(index=False).encode("utf-8")
         st.download_button("⬇️ Download OI Table as CSV", csv, "nifty_oi_table.csv", "text/csv")
-
-        # Show OI totals and PCR
         total_ce_oi = df["OI (CE)"].replace({',': ''}, regex=True).astype(int).sum()
         total_pe_oi = df["OI (PE)"].replace({',': ''}, regex=True).astype(int).sum()
         total_pcr = round(total_pe_oi / total_ce_oi, 2) if total_ce_oi else 0
         st.info(f"**Total CE OI:** {format_lakh(total_ce_oi)}  **Total PE OI:** {format_lakh(total_pe_oi)}  **PCR:** {total_pcr}")
-
-        # ——— Intraday Log Update ———
         update_oi_trend_log(total_ce_oi, total_pe_oi)
 
     # ——— Intraday OI Trend Table ———
     st.markdown("### Intraday Data")
     df_trend = build_intraday_trend_df()
-    if not df_trend.empty:
-        st.dataframe(style_intraday_table(df_trend), use_container_width=True, height=360)
-        st.line_chart(df_trend.set_index("Time")[["Call", "Put", "PCR"]])
-
-# ———————————————————————————————————————————————
+    filtered_df = filter_intraday_df_by_interval(df_trend, interval)
+    if not filtered_df.empty:
+        st.dataframe(style_intraday_table(filtered_df), use_container_width=True, height=360)
+        st.line_chart(filtered_df.set_index("Time")[["Call", "Put", "PCR"]])

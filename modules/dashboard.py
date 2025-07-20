@@ -5,6 +5,7 @@ from modules.fyers_api import get_crude_data_fyers
 from modules.ai_calls import generate_ai_call
 from modules.news_feed import show_news_section
 from modules.chatbot import show_chatbot
+from modules.fyers_oi_table import show_fyers_oi_table  # ✅ New import
 import pandas as pd
 
 def is_market_open():
@@ -13,9 +14,17 @@ def is_market_open():
 
 def show_dashboard():
     st.sidebar.title("📊 FS Traders Official")
-    
-    # ✅ Yeh define karo pehle
-    menu = ["📈 OI + PCR", "📊 OI Table", "🛢 CrudeOil", "🤖 AI Calls", "📰 News", "💬 Chatbot"]
+
+    # ✅ Combined menu with Angel and Fyers data
+    menu = [
+        "📈 OI + PCR",
+        "📊 Angel OI Table",
+        "🟣 Fyers OI Table", 
+        "🛢 CrudeOil", 
+        "🤖 AI Calls", 
+        "📰 News", 
+        "💬 Chatbot"
+    ]
     choice = st.sidebar.radio("Go to:", menu)
 
     if choice == "📈 OI + PCR":
@@ -28,7 +37,7 @@ def show_dashboard():
         else:
             st.warning("Market closed – 9:30–15:30 IST")
 
-    elif choice == "📊 OI Table":
+    elif choice == "📊 Angel OI Table":
         if is_market_open():
             chain = fetch_oi_chain()
             if chain:
@@ -37,6 +46,9 @@ def show_dashboard():
                 st.warning("⚠️ No option chain data.")
         else:
             st.warning("Market closed – 9:30–15:30 IST")
+
+    elif choice == "🟣 Fyers OI Table":
+        show_fyers_oi_table()
 
     elif choice == "🛢 CrudeOil":
         st.subheader("🛢 Live MCX CrudeOil")

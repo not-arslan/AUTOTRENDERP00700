@@ -10,7 +10,13 @@ from datetime import datetime
 def get_fyers_option_chain(symbol="NSE:NIFTY50-INDEX", expiry=None):
     """
     Fetch option chain from Fyers API (requires valid access token in st.secrets).
+    Includes retry logic and Sunday check.
     """
+    # Stop on Sunday
+    if datetime.today().weekday() == 6:  # Sunday = 6
+        st.warning("📅 Today is Sunday. Live Fyers data is unavailable.")
+        return None
+
     try:
         headers = {
             "Authorization": f"Bearer {st.secrets['fyers_access_token']}"
@@ -18,17 +24,25 @@ def get_fyers_option_chain(symbol="NSE:NIFTY50-INDEX", expiry=None):
         payload = {
             "symbol": symbol
         }
-        url = "https://api.fyers.in/data-rest/v3/options-chain"
-
         if expiry:
             payload["expiry"] = expiry
 
-        response = requests.get(url, headers=headers, params=payload)
-        if response.status_code == 200:
-            return response.json()
-        else:
-            st.error(f"❌ Fyers API Error: {response.status_code}")
-            return None
+        url = "https://api.fyers.in/data-rest/v3/options-chain"
+
+        # Retry logic (max 3 attempts)
+        for attempt in range(3):
+            response = requests.get(url, headers=headers, params=payload)
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 503:
+                time.sleep(2)
+            else:
+                st.error(f"❌ Fyers API Error: {response.status_code}")
+                return None
+
+        st.error("❌ Fyers API Error: 503 (after retries)")
+        return None
+
     except Exception as e:
         st.error(f"❌ Exception while calling Fyers API: {e}")
         return None

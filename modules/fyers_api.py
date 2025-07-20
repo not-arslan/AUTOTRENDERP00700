@@ -37,6 +37,6 @@ def get_crude_data_fyers(symbol: str = "MCX:CRUDEOIL24JULFUT"):
     Returns a list of quote dicts for the given MCX symbol.
     """
     client = _get_fyers_client()
-    resp = client.quotes(symbols=[symbol])
+    resp = client.quotes({"symbols": symbol})  # ✅ FIXED LINE
     # Fyers returns quotes under the 'd' key
     return resp.get("d", [])

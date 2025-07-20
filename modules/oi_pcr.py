@@ -1,72 +1,62 @@
-# modules/oi_pcr.py
-
 import streamlit as st
 import pandas as pd
-import time
-import requests
-from datetime import datetime
+from datetime import datetime, time
+import time as systime
+from modules.fyers_api import get_option_chain_fyers
 
-# Only rerun every 3 minutes
-if "last_refresh" not in st.session_state:
-    st.session_state.last_refresh = time.time()
-elif time.time() - st.session_state.last_refresh > 180:
-    st.session_state.last_refresh = time.time()
-    st.rerun()
+# Auto-refresh every 3 minutes
+def _auto_refresh():
+    if "last_refresh" not in st.session_state:
+        st.session_state.last_refresh = systime.time()
+    elif systime.time() - st.session_state.last_refresh > 180:
+        st.session_state.last_refresh = systime.time()
+        st.experimental_rerun()
 
-@st.cache_data(ttl=180)  # ⏱ Cache for 3 minutes
-def fetch_option_chain(symbol="NIFTY", exchange="NSE"):
-    try:
-        headers = {
-            "X-PrivateKey": st.secrets["api_key"]
-        }
-        url = "https://apiconnect.angelbroking.com/rest/secure/angelbroking/order/v1/getOptionChain"
-        payload = {
-            "symbol": symbol,
-            "exchange": exchange
-        }
+_auto_refresh()
 
-        response = requests.post(url, headers=headers, json=payload)
-        if response.status_code == 200:
-            return response.json()
-        else:
-            st.error(f"⚠️ Angel One API error: {response.status_code}")
-            return None
-    except Exception as e:
-        st.error(f"❌ Exception while fetching option chain: {str(e)}")
-        return None
+@st.cache_data(ttl=180)
+def fetch_oi_chain():
+    return get_option_chain_fyers()
 
-def calculate_pcr(option_data):
-    ce_oi = 0
-    pe_oi = 0
+
+def show_oi_pcr_section(chain_rows):
+    ce_total, pe_total = 0, 0
     rows = []
-
-    for row in option_data:
-        if "CE" in row and "PE" in row:
-            ce = row["CE"]
-            pe = row["PE"]
-            ce_oi_val = ce.get("openInterest", 0)
-            pe_oi_val = pe.get("openInterest", 0)
-            pcr = round(pe_oi_val / ce_oi_val, 2) if ce_oi_val > 0 else 0
-
+    for r in chain_rows:
+        if "CE" in r and "PE" in r:
+            ce = r["CE"]
+            pe = r["PE"]
+            ce_oi = ce.get("openInterest", 0)
+            pe_oi = pe.get("openInterest", 0)
+            ce_total += ce_oi
+            pe_total += pe_oi
             rows.append({
-                "Strike": ce.get("strikePrice", 0),
-                "CE OI": ce_oi_val,
-                "PE OI": pe_oi_val,
-                "PCR": pcr
+                "Strike": ce.get("strikePrice"),
+                "CE OI": ce_oi,
+                "PE OI": pe_oi,
+                "PCR": round(pe_oi/ce_oi, 2) if ce_oi else None
             })
-            ce_oi += ce_oi_val
-            pe_oi += pe_oi_val
+    df = pd.DataFrame(rows)
+    total_pcr = round(pe_total/ce_total, 2) if ce_total else None
+    st.subheader("📈 Option Chain & PCR – NIFTY")
+    st.dataframe(df, use_container_width=True)
+    st.success(f"🧮 Live PCR: {total_pcr}")
 
-    total_pcr = round(pe_oi / ce_oi, 2) if ce_oi > 0 else 0
-    return pd.DataFrame(rows), total_pcr
 
-def show_oi_pcr_dashboard():
-    st.subheader("📈 Live Option Chain – NIFTY (NSE)")
-    data = fetch_option_chain()
-
-    if data and "data" in data:
-        df, total_pcr = calculate_pcr(data["data"])
-        st.dataframe(df, use_container_width=True)
-        st.success(f"📊 Live PCR: {total_pcr}")
-    else:
-        st.error("❌ No data found or failed to fetch.")
+def show_oi_table(chain_rows):
+    rows = []
+    for r in chain_rows:
+        if "CE" in r and "PE" in r:
+            ce = r["CE"]
+            pe = r["PE"]
+            rows.append({
+                "Strike": ce.get("strikePrice"),
+                "CE OI": ce.get("openInterest", 0),
+                "PE OI": pe.get("openInterest", 0),
+                "CE Change OI": ce.get("changeinOpenInterest", 0),
+                "PE Change OI": pe.get("changeinOpenInterest", 0),
+                "PCR": round(pe.get("openInterest", 0) / ce.get("openInterest", 1), 2)
+            })
+    df = pd.DataFrame(rows)
+    st.subheader("📊 OI Table – NIFTY Option Chain")
+    st.dataframe(df.sort_values("Strike"), use_container_width=True)

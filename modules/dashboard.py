@@ -1,3 +1,5 @@
+# modules/dashboard.py
+
 import streamlit as st
 from datetime import datetime, time
 from modules.oi_pcr import show_oi_pcr_section, show_oi_table, fetch_oi_chain
@@ -15,7 +17,6 @@ def is_market_open():
 def show_dashboard():
     st.sidebar.title("📊 FS Traders Official")
 
-    # ✅ Combined menu with Angel and Fyers data
     menu = [
         "📈 OI + PCR",
         "📊 Angel OI Table",
@@ -48,6 +49,7 @@ def show_dashboard():
             st.warning("Market closed – 9:30–15:30 IST")
 
     elif choice == "🟣 Fyers OI Table":
+        # 👇 Yehi se naya Autotrendr-style table chalega
         show_fyers_oi_table()
 
     elif choice == "🛢 CrudeOil":

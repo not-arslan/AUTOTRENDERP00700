@@ -7,6 +7,7 @@ from modules.ai_calls    import generate_ai_call
 from modules.news_feed   import show_news_section
 from modules.chatbot     import show_chatbot
 from modules.login       import logout_button
+from modules.oi_pcr import show_oi_table
 import pandas as pd
 
 def is_market_open():

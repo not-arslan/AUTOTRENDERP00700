@@ -41,9 +41,9 @@ def show_dashboard():
     logout_button()
 
     menu = ["📈 OI + PCR", "📊 OI Table", "🛢 CrudeOil", "🤖 AI Calls", "📰 News", "💬 Chatbot"]
-    section = st.sidebar.radio("Go to:", menu)
+choice = st.sidebar.radio("Go to:", menu)  # ❗ Yeh variable ka naam 'choice' hona chahiye, not 'section'
 
-    if section == "📈 OI + PCR":
+if choice == "📈 OI + PCR":
     if is_market_open():
         chain = fetch_oi_chain()
         if chain:
@@ -53,7 +53,7 @@ def show_dashboard():
     else:
         st.warning("Market closed – 9:30–15:30 IST")
 
-elif section == "📊 OI Table":
+elif choice == "📊 OI Table":
     if is_market_open():
         chain = fetch_oi_chain()
         if chain:
@@ -63,8 +63,9 @@ elif section == "📊 OI Table":
     else:
         st.warning("Market closed – 9:30–15:30 IST")
 
+# ... baaki blocks same pattern mein
 
-    # Fetch once
+ # Fetch once
     try:
         if section == "📈 OI + PCR":
             if is_market_open():

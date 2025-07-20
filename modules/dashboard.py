@@ -40,8 +40,29 @@ def show_dashboard():
     st.sidebar.title("📊 FS Traders")
     logout_button()
 
-    menu = ["📈 OI + PCR", "🛢 CrudeOil", "🤖 AI Calls", "📰 News", "💬 Chatbot"]
+    menu = ["📈 OI + PCR", "📊 OI Table", "🛢 CrudeOil", "🤖 AI Calls", "📰 News", "💬 Chatbot"]
     section = st.sidebar.radio("Go to:", menu)
+
+    if section == "📈 OI + PCR":
+    if is_market_open():
+        chain = fetch_oi_chain()
+        if chain:
+            show_oi_pcr_section(chain)
+        else:
+            st.warning("⚠️ No option chain data.")
+    else:
+        st.warning("Market closed – 9:30–15:30 IST")
+
+elif section == "📊 OI Table":
+    if is_market_open():
+        chain = fetch_oi_chain()
+        if chain:
+            show_oi_table(chain)
+        else:
+            st.warning("⚠️ No option chain data.")
+    else:
+        st.warning("Market closed – 9:30–15:30 IST")
+
 
     # Fetch once
     try:

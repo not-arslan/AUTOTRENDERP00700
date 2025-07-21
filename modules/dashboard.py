@@ -2,6 +2,7 @@
 
 import streamlit as st
 from datetime import datetime, time
+from zoneinfo import ZoneInfo
 from modules.oi_pcr import show_oi_pcr_section, show_oi_table, fetch_oi_chain
 from modules.fyers_api import get_crude_data_fyers
 from modules.ai_calls import generate_ai_call
@@ -11,9 +12,9 @@ from modules.fyers_oi_table import show_fyers_oi_table  # ✅ New import
 import pandas as pd
 
 def is_market_open():
-    now = datetime.now().time()
+    now = datetime.now(ZoneInfo("Asia/Kolkata")).time()
     return time(9, 30) <= now <= time(15, 30)
-
+    
 def show_dashboard():
     st.sidebar.title("📊 FS Traders Official")
 

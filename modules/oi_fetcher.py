@@ -1,41 +1,49 @@
-import requests
 import streamlit as st
+import pandas as pd
+import requests
 
-def fetch_oi_chain(source="auto", symbol="NSE:NIFTY50-INDEX", expiry=None):
-    """Auto-select best live OI source."""
-    errors = []
-    if source in ["auto", "fyers"]:
-        try:
-            # --- FYERS
-            headers = {"Authorization": f"Bearer {st.secrets['fyers_access_token']}"}
-            url = "https://api.fyers.in/data-rest/v3/options-chain"
-            params = {"symbol": symbol}
-            if expiry: params["expiry"] = expiry
-            resp = requests.get(url, headers=headers, params=params, timeout=6)
-            if resp.status_code == 200:
-                return resp.json(), "Fyers"
-            else:
-                errors.append(("Fyers", resp.status_code))
-        except Exception as e:
-            errors.append(("Fyers", str(e)))
+def fetch_fyers_oi_chain(symbol="NSE:NIFTY50-INDEX", expiry=None):
+    try:
+        headers = {"Authorization": f"Bearer {st.secrets['fyers_access_token']}"}
+        payload = {"symbol": symbol}
+        if expiry:
+            payload["expiry"] = expiry
+        url = "https://api.fyers.in/data-rest/v3/options-chain"
+        resp = requests.get(url, headers=headers, params=payload, timeout=7)
+        if resp.status_code == 200:
+            return resp.json(), "Fyers"
+        else:
+            return None, None
+    except Exception as e:
+        return None, None
 
-    if source in ["auto", "angel"]:
-        try:
-            # --- ANGEL ONE (put your API call here)
-            # resp = requests.get(...) # Fill as per Angel API
-            # if resp.status_code == 200:
-            #     return resp.json(), "Angel"
-            pass
-        except Exception as e:
-            errors.append(("Angel", str(e)))
+def fetch_angel_oi_chain(symbol="NIFTY", expiry=None):
+    try:
+        # Replace this with your actual Angel One fetch logic
+        # For now, just return None (implement later)
+        return None, None
+    except Exception as e:
+        return None, None
 
-    if source in ["auto", "kotak"]:
-        try:
-            # --- KOTAK (put your API call here)
-            pass
-        except Exception as e:
-            errors.append(("Kotak", str(e)))
+def fetch_kotak_oi_chain(symbol="NIFTY", expiry=None):
+    try:
+        # Replace this with your actual Kotak fetch logic
+        return None, None
+    except Exception as e:
+        return None, None
 
-    # --- Fallback (e.g., manual CSV, NSE site, etc.)
-    return None, errors  # Could return ("fallback_data", "Fallback")
-
+def fetch_oi_chain_universal(symbol="NSE:NIFTY50-INDEX", expiry=None):
+    # Try Fyers first
+    data, source = fetch_fyers_oi_chain(symbol, expiry)
+    if data:
+        return data, source
+    # Try Angel next
+    data, source = fetch_angel_oi_chain(symbol, expiry)
+    if data:
+        return data, source
+    # Try Kotak
+    data, source = fetch_kotak_oi_chain(symbol, expiry)
+    if data:
+        return data, source
+    # Nothing worked
+    return None, None
